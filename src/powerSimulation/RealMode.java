@@ -4,28 +4,18 @@ import java.util.ArrayList;
 
 public abstract class RealMode extends Mode {
 
-	public RealMode(Orbit orbit, Battery battery) {
+	ComponentSet componentSet;
+	
+	public RealMode(Orbit orbit, Battery battery, Function[] activeFunctions) {
 		super(orbit, battery);
-		activeFunctionList = new ArrayList<Function>();
-		inactiveFunctionList = new ArrayList<Function>();
-		
-		for(Function f : Function.values())
-			inactiveFunctionList.add(f);
+		componentSet = new ComponentSet(activeFunctions);
 	}
 	
-	protected ArrayList<Function> activeFunctionList;
-	protected ArrayList<Function> inactiveFunctionList;
 	
 	protected abstract void update();
 	
 	private void computeStep() {
-		double budget = 0;
-		for(Function f : activeFunctionList)
-			budget+=f.getActiveBudget(orbit.dt);
-		for(Function f : inactiveFunctionList)
-			budget+=f.getInactiveBudget(orbit.dt);
-			
-		battery.update(orbit.getDate(), budget);
+		battery.update(orbit.getDate(), componentSet.getConsumedCharge(orbit.dt));
 		orbit.nextStep();
 	}
 	
@@ -36,20 +26,6 @@ public abstract class RealMode extends Mode {
 		update();
 		computeStep();
 		return nextMode();
-	}
-	
-	protected void activateFunction(Function f) {
-		if(inactiveFunctionList.contains(f)) {
-			inactiveFunctionList.remove(f);
-			activeFunctionList.add(f);
-		}
-	}
-	
-	protected void deactivateFunction(Function f) {
-		if(activeFunctionList.contains(f)) {
-			activeFunctionList.remove(f);
-			inactiveFunctionList.add(f);
-		}
 	}
 
 }
